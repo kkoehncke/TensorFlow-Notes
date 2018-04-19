@@ -1,14 +1,14 @@
 #Up and Running with TensorFlow
 ##Managing Graphs
 Initializing variables and defining a function
-```
+```python
 x = tf.Variable(3, name = 'x')
 y = tf.Variable(4, name= 'y')
 f = x*x*y + y + 2
 ```
 
 One way of running TF session
-```
+```python
 sess = tf.Session()
 sess.run(x.initializer)
 sess.run(y.initializer)
@@ -20,7 +20,7 @@ sess.close()
 
 Globally creates all variable nodes without having to specify sess.run(...), 
 Automatically closing as well
-```
+```python
 init = tf.global_variables_initializer()  # prepare an init node
 
 with tf.Session() as sess:
@@ -29,7 +29,7 @@ with tf.Session() as sess:
 ```
 
 We can also create an interactive session, which tells TensorFlow to set the interactive session as default; still have to close session:
-```
+```python
 init = tf.global_variables_initializer()
 sess = tf.InteractiveSession()
 init.run()
@@ -41,11 +41,13 @@ sess.close()
 
 TensorFlow program typically broken into two parts:
 
-	- Graph Construction Phase 
-	- Execution Phase
+```python
+- Graph Construction Phase 
+- Execution Phase
+```
 
 Any node you create is automatically added to the default graph:
-```
+```python
 x1 = tf.Variable(1)
 x1.graph is tf.get_default_graph()
 >> True
@@ -54,7 +56,7 @@ x1.graph is tf.get_default_graph()
 In most cases this is fine, but sometimes you may want to manage multiple independent graphs. 
 You can do this by creating a new Graph and temporarily making it the default graph inside a with block, like so:
 
-```
+```python
 graph = tf.Graph()
 with graph.as_default():
     x2 = tf.Variable(2)
@@ -68,7 +70,7 @@ x2.graph is tf.get_default_graph()
 **Run tf.reset_default_graph() to prevent a graph having duplicate nodes when running jupyter cells multiple times**
 
 Tensorflow automatically determines the set of nodes needed and evaluates those nodes first:
-```
+```python
 w = tf.constant(3)
 x = w + 2
 y = x + 5
@@ -87,7 +89,7 @@ with tf.Session() as sess:
   - All node values are dropped between each evaluation 
 
 If we want an efficient evaluation we can do the following:
-```
+```python
 w = tf.constant(3)
 x = w + 2
 y = x + 5
@@ -102,7 +104,7 @@ with tf.Session() as sess:
 ##Linear Regression 
 
 Here is an example of computing normal equation for sample housing data:
-```
+```python
 from sklearn.datasets import fetch_california_housing
 
 housing = fetch_california_housing()
@@ -126,7 +128,7 @@ Notes:
 - random_uniform() (acts like Numpy rand() function), generates random values
 - assign() performs assignment of variable with new value 
 
-```
+```python
 # Construction Phase
 n_epochs = 1000
 learning_rate = 0.01
@@ -156,19 +158,19 @@ with tf.Session() as sess:
 
 We can however take advantage of TensorFlow's *autodiff* feature so we don't need to know the gradient symbolically:
 
-```
+```python
 gradient = tf.gradients(mse, [theta])[0]
 ```
 
 We can also use a built-in optimizer (won't need to use gradient term as its already baked in):
 
-```
+```python
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 training_op = optimizer.minimize(mse)
 ```
 
 So our example turns into:
-```
+```python
 # Construction Phase
 n_epochs = 1000
 learning_rate = 0.01
@@ -199,7 +201,7 @@ with tf.Session() as sess:
 ##Placeholder Nodes
 
 Placeholder Nodes just output data you tell it to output at runtime:
-```
+```python
 # We can specify the shape of our placeholder
 A = tf.placeholder(tf.float32, shape=(None, 3))
 B = A + 5
@@ -216,7 +218,7 @@ print(B_val_2)
 
 ##Mini Batch Gradient Descent 
 With our placeholders, we can implement mini-batch gradient descent as follows:
-```
+```python
 # Construction Phase
 n_epochs = 10
 learning_rate = 0.01
@@ -255,7 +257,7 @@ with tf.Session() as sess:
 ```
 ##Saving Model
 We can save our trained model for later usage using a *Saver* node as follows:
-```
+```python
 #Creates a Saver node
 saver = tf.train.Saver() 
 #Creates a Saver node that specifies what variables to save / restore
@@ -270,7 +272,7 @@ with tf.Session() as sess:
 ```
 
 By default, the *Saver* node saves the graph structure to a *.meta* file. Hence, after we train our model, a brand new invocation of our model would look something like this:
-```
+```python
 reset_graph()
 
 saver = tf.train.import_meta_graph("/tmp/my_model_final.ckpt.meta")  # this loads the graph structure**
@@ -286,7 +288,7 @@ Instead of using print statements to track our progress during training, we can 
 
 First we need to write information about our graph and statistics associated with our model (e.g. MSE) to a log file that Tensorboard can read. We need to create a new log file everytime otherwise Tensorboard will aggregate the results; we do this by adding a timestamp to the log as follows:
 
-```
+```python
 from datetime import datetime
 
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
@@ -296,13 +298,13 @@ logdir = "{}/run-{}/".format(root_logdir, now)
 
 We then can write to our log file during the construction phase as follows:
 
-```
+```python
 mse_summary = tf.summary.scalar('MSE', mse)
 file_writer = tf.summary.FileWriter(logdir, tf.get_default_graph())
 ```
 
 During our mini-batch training, we want to evaluate the MSE during each mini-batch:
-```
+```python
     for batch_index in range(n_batches):
         X_batch, y_batch = fetch_batch(epoch, batch_index, batch_size)
         if batch_index % 10 == 0:
@@ -313,14 +315,14 @@ During our mini-batch training, we want to evaluate the MSE during each mini-bat
 ```
 
 **Remember to close file writer at end of program**
-```
+```python
 file_writer.close()
 ```
 
 ##TensorFlow Semantics
 ###Name Scopes 
 We can create *name scopes* to group together related nodes. For example:
-```
+```python
 with tf.name_scope("loss") as scope:
     error = y_pred - y
     mse = tf.reduce_mean(tf.square(error), name="mse")
@@ -337,7 +339,7 @@ print mse.op.name
 ###Modularity 
 We can define functions as normal to perform certain functionality modulary:
 
-```
+```python
 #Define ReLu node
 def relu(X):
     w_shape = (int(X.get_shape()[1]), 1)
@@ -355,7 +357,7 @@ output = tf.add_n(relus, name="output")
 ![](http://i.markdownnotes.com/image_pROn5Ug.jpg)
 
 In combination with a name scope, we can make our graph look a lot cleaner:
-```
+```python
 def relu(X):
     with tf.name_scope("relu"):
         w_shape = (int(X.get_shape()[1]), 1)                         
@@ -376,7 +378,7 @@ There multiple ways within TensorFlow to share variables.
 
 The standard way of defining a variable and passing it as a parameter to a function still works as we see with our ReLu example:
 
-```
+```python
 def relu(X, threshold):
     with tf.name_scope("relu"):
         [...]
@@ -388,7 +390,7 @@ threshold = tf.Variable(0.0, name="threshold")
 
 This method can be cumbersome if we have multiple parameters. Another way is to set the shared variable as an attribute in the function itself:
 
-```
+```python
 def relu(X):
     with tf.name_scope("relu"):
         if not hasattr(relu, "threshold"):
@@ -399,9 +401,9 @@ def relu(X):
 
 A slightly more complicated but more compact way of sharing variables is by using TensorFlow's *get_variable().* We can use it as follows:
 
-```
+```python
 def relu(X):
-	//Creates variable if not defined, reuses for later use
+	#Creates variable if not defined, reuses for later use
     threshold = tf.get_variable("threshold", shape=(),
                                 initializer=tf.constant_initializer(0.0))
     [...]
@@ -423,7 +425,7 @@ TensorFlow has many pre-built neural networks within its high-level API *TF.Lear
 ###Construction Phase
 We first specify the number of input and output nodes, as well how many hidden layers we want (and the number of nodes in each layer):
 
-```
+```python
 import tensorflow as tf
 #In our case, we want 2 hidden layers
 n_inputs = 28*28  # MNIST, each image is 28x28 pixels 
@@ -434,16 +436,16 @@ n_outputs = 10
 
 Next we define our placeholder nodes to hold our training data and target:
 
-```
-//We know that X will be a matrix with each column being a feature,
-//hence why we specify the y-axis to be size of n_inputs
+```python
+#We know that X will be a matrix with each column being a feature,
+#hence why we specify the y-axis to be size of n_inputs
 X = tf.placeholder(tf.float32, shape=(None, n_inputs), name="X")
 y = tf.placeholder(tf.int64, shape=(None), name="y")
 ```
 
 Now we want to create a function which will create a neuron layer, whether it is a hidden or output layer does not matter as we can pass parameters to our function to define specifically what kind of layer it is :
 
-```
+```python
 def neuron_layer(X, n_neurons, name, activation=None):
     with tf.name_scope(name):
         n_inputs = int(X.get_shape()[1])
@@ -462,7 +464,7 @@ def neuron_layer(X, n_neurons, name, activation=None):
 
 Now we are ready to build our neural network:
 
-```
+```python
 with tf.name_scope("dnn"):
     hidden1 = neuron_layer(X, n_hidden1, name="hidden1",
                            activation=tf.nn.relu)
@@ -473,7 +475,7 @@ with tf.name_scope("dnn"):
 
 (TensorFlow already has functions that do all this for you like *tf.layers.dense()* which creates a fully connected layer):
 
-```
+```python
 with tf.name_scope("dnn"):
     hidden1 = tf.layers.dense(X, n_hidden1, name="hidden1",
                               activation=tf.nn.relu)
@@ -486,20 +488,20 @@ Now that we have the architecture of our neural network set up, we need to defin
 
 *sparse_softmax_cross_entropy_with_logits()* is equivalent to applying the softmax activation function and then computing the cross entropy, but it is more efficient, and it properly takes care of corner cases like logits equal to 0
 
-```
+```python
 with tf.name_scope("loss"):	
-	//Computes cross entropy with logits i.e. output before going through softmax
+	#Computes cross entropy with logits i.e. output before going through softmax
     xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y,
                                                               logits=logits)
-    //Compute mean cross entropy 
+    #Compute mean cross entropy 
 	loss = tf.reduce_mean(xentropy, name="loss")
-	//Computes log loss
+	#Computes log loss
 	loss_summary = tf.summary.scalar('log_loss', loss)
 ```
 
 Now all we need to do is define our *GradientDescentOptimizer* and how we evaluate our model; in this case we will simply use accuracy:
 
-```
+```python
 learning_rate = 0.01
 
 with tf.name_scope("train"):
@@ -507,16 +509,16 @@ with tf.name_scope("train"):
     training_op = optimizer.minimize(loss)
 
 with tf.name_scope("eval"):
-	//Checks whether highest logit corresponds to target class
-	//Returns vector of boolean values
+	#Checks whether highest logit corresponds to target class
+	#Returns vector of boolean values
     correct = tf.nn.in_top_k(logits, y, 1)
-	//Need to cast booleans to floats to compute average
+	#Need to cast booleans to floats to compute average
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 ```
 
 Lastly, we call our global variable initializer and define our Saver and that concludes the construction phase!:
 
-```
+```python
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
 ```
@@ -525,14 +527,14 @@ saver = tf.train.Saver()
 
 We begin by loading in the MNIST dataset. TensorFlow has its own helper function that gets the data, scales it between 0 and 1, shuffles it, and provides a function to load one mini batch at a time:
 
-```
+```python
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/")
 ```
 
 Now we can train our model as usual:
 
-```
+```python
 n_epochs = 40
 batch_size = 50
 with tf.Session() as sess:
@@ -552,7 +554,7 @@ with tf.Session() as sess:
 
 And test our model as usual:
 
-```
+```python
 with tf.Session() as sess:
     saver.restore(sess, "./my_model_final.ckpt") # or better, use save_path
     X_new_scaled = mnist.test.images[:20]
@@ -595,7 +597,7 @@ We can alleviate this problem one way using different kinds of initialization te
 
 By default, TensorFlow's *tf.layers.dense()* uses Xavier initialization. To change to He initialization we do the following:
 
-```
+```python
 he_init = tf.contrib.layers.variance_scaling_initializer()
 hidden1 = tf.layers.dense(X, n_hidden1, activation=tf.nn.relu,
                           kernel_initializer=he_init, name="hidden1"
